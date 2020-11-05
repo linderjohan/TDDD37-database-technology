@@ -331,10 +331,76 @@ Execute:
 								Note that one row should be returned for each supplier. */
 
 
-SELECT s.name AS supplier_name, SUM(p.weight) AS total_weight FROM jbparts p
+SELECT s.name AS supplier_name, SUM(p.weight * supply.quan) AS total_weight FROM jbparts p
 INNER JOIN jbsupply supply ON p.id = supply.part
 INNER JOIN jbsupplier s ON supply.supplier = s.id
-WHERE s.city IN (SELECT id FROM jbcity WHERE state = 'Mass');
+INNER JOIN jbcity c ON s.city = c.id
+WHERE c.state = 'Mass'
+GROUP BY supply.supplier;
 
-/* INNER JOIN jbcity c ON s.city = c.id
-WHERE c.state = 'Mass'; */
+
+/* Question 14: Create a new relation (a table), with the same attributes as the table items using
+						the CREATE TABLE syntax where you define every attribute explicitly (i.e. not
+						as a copy of another table). Then fill the table with all items that cost less than the
+						average price for items. Remember to define primary and foreign keys in your
+						table! */
+
+
+CREATE TABLE budget_item (
+	id INT NOT NULL,
+	name VARCHAR(20),
+	dept INT NOT NULL,
+	price INT,
+	qoh INT UNSIGNED,
+	supplier INT NOT NULL,
+	CONSTRAINT pk_budget_item PRIMARY KEY(id),
+	CONSTRAINT fk_budget_item_dept FOREIGN KEY(dept) REFERENCES jbdept(id),
+	CONSTRAINT fk_budget_item_supplier FOREIGN KEY(supplier) REFERENCES jbsupplier(id))
+	ENGINE=InnoDB;
+
+
+INSERT INTO budget_item 
+SELECT * FROM jbitem i
+WHERE i.price < (SELECT AVG(jbitem.price) FROM jbitem);
+
+/* Question 15: Create a view that contains the items that cost less than the average price for
+					 items. */
+
+CREATE VIEW budget_items AS SELECT * FROM budget_item;
+
+
+
+
+/* Question 16: What is the difference between a table and a view? One is static and the other is
+					 dynamic. Which is which and what do we mean by static respectively dynamic? */
+
+
+/* A view is virtual table that is based on the result of a SQL-statement, like a SELECT. It contains no actual data,
+but has columns and rows just like a table. A view is a definition that is built on top of other tables (or views).
+If data are changing in som of the tables the view are built on, the view reflects those changes. Therefore Views are 
+dynamic.  
+
+The table is considered static since it access data that is stored physically.
+ */
+
+
+/* Question 17: Create a view that calculates the total cost of each debit, by considering price and
+					 quantity of each bought item. (To be used for charging customer accounts). The
+					 view should contain the sale identifier (debit) and total cost. Use only the implicit
+					 join notation, i.e. only use a where clause but not the keywords inner join, right
+					 join or left join, */
+
+CREATE VIEW cost_per_debit AS 
+SELECT d.id, s.quantity * i.price AS total_price 
+FROM jbdebit d, jbsale s, jbitem i 
+WHERE d.id = s.debit 
+AND s.item = i.id
+GROUP BY d.id;
+
+SELECT * FROM cost_per_debit;
+
+
+/* Question 18: Do the same as in (17), using only the explicit join notation, i.e. using only left,
+					 right or inner joins but no join condition in a where clause. Motivate why you use
+					 the join you do (left, right or inner), and why this is the correct one (unlike the
+					 others). */
