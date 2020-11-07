@@ -8,6 +8,9 @@
  
  DROP TABLE IF EXISTS custom_table CASCADE;-- 
  */
+ DROP TABLE IF EXISTS budget_item CASCADE;
+ DROP VIEW IF EXISTS budget_items CASCADE;
+ DROP VIEW IF EXISTS cost_per_debit CASCADE;
 /* Have the source scripts in the file so it is easy to recreate!*/
 /*
  
@@ -15,6 +18,7 @@
  SOURCE company_data.sql;
  
  */
+ 
 /*
  Question 1: List all employees, i.e all tuples in the jbemployee relation
  */
@@ -338,6 +342,24 @@ INNER JOIN jbcity c ON s.city = c.id
 WHERE c.state = 'Mass'
 GROUP BY supply.supplier;
 
+/* 
+Execute:
+> SELECT s.name AS supplier_name, SUM(p.weight * supply.quan) AS total_weight FROM jbparts p
+INNER JOIN jbsupply supply ON p.id = supply.part
+INNER JOIN jbsupplier s ON supply.supplier = s.id
+INNER JOIN jbcity c ON s.city = c.id
+WHERE c.state = 'Mass'
+GROUP BY supply.supplier
+
++ ------------------ + ----------------- +
+| supplier_name      | total_weight      |
++ ------------------ + ----------------- +
+| Fisher-Price       | 1135000           |
+| DEC                | 3120              |
++ ------------------ + ----------------- +
+2 rows 
+*/
+
 
 /* Question 14: Create a new relation (a table), with the same attributes as the table items using
 						the CREATE TABLE syntax where you define every attribute explicitly (i.e. not
@@ -359,16 +381,54 @@ CREATE TABLE budget_item (
 	ENGINE=InnoDB;
 
 
+/*
+Execute:
+> 	CREATE TABLE budget_item (
+	id INT NOT NULL,
+	name VARCHAR(20),
+	dept INT NOT NULL,
+	price INT,
+	qoh INT UNSIGNED,
+	supplier INT NOT NULL,
+	CONSTRAINT pk_budget_item PRIMARY KEY(id),
+	CONSTRAINT fk_budget_item_dept FOREIGN KEY(dept) REFERENCES jbdept(id),
+	CONSTRAINT fk_budget_item_supplier FOREIGN KEY(supplier) REFERENCES jbsupplier(id))
+	ENGINE=InnoDB;
+
+0 row(s) affected 
+0.031 sec
+
+ */
+
 INSERT INTO budget_item 
 SELECT * FROM jbitem i
 WHERE i.price < (SELECT AVG(jbitem.price) FROM jbitem);
+
+
+/* 
+Execute: 
+> INSERT INTO budget_item 
+SELECT * FROM jbitem i
+WHERE i.price < (SELECT AVG(jbitem.price) FROM jbitem);
+
+14 row(s) affected Records: 14  Duplicates: 0  Warnings: 0
+0.015 sec
+*/
+
 
 /* Question 15: Create a view that contains the items that cost less than the average price for
 					 items. */
 
 CREATE VIEW budget_items AS SELECT * FROM budget_item;
 
+/* 
+Execute: 
+>CREATE VIEW budget_items AS SELECT * FROM budget_item;
 
+0 row(s) affected
+0.016 sec
+ 
+*/
 
 
 /* Question 16: What is the difference between a table and a view? One is static and the other is
@@ -397,10 +457,158 @@ WHERE d.id = s.debit
 AND s.item = i.id
 GROUP BY d.id;
 
+/* 
+Execute:
+> CREATE VIEW cost_per_debit AS 
+SELECT d.id, s.quantity * i.price AS total_price 
+FROM jbdebit d, jbsale s, jbitem i 
+WHERE d.id = s.debit 
+AND s.item = i.id
+GROUP BY d.id;
+
+0 row(s) affected
+0.015 sec
+*/
+
 SELECT * FROM cost_per_debit;
+
+/* 
+Execute:
+> SELECT * FROM cost_per_debit
+
++ ------- + ---------------- +
+| id      | total_price      |
++ ------- + ---------------- +
+| 100581  | 1250             |
+| 100582  | 1000             |
+| 100586  | 396              |
+| 100592  | 650              |
+| 100593  | 430              |
+| 100594  | 3295             |
++ ------- + ---------------- +
+6 rows
+*/
 
 
 /* Question 18: Do the same as in (17), using only the explicit join notation, i.e. using only left,
 					 right or inner joins but no join condition in a where clause. Motivate why you use
 					 the join you do (left, right or inner), and why this is the correct one (unlike the
 					 others). */
+
+DROP VIEW cost_per_debit;
+
+CREATE VIEW cost_per_debit AS
+SELECT d.id, s.quantity * i.price AS total_price 
+FROM jbdebit d 
+INNER JOIN jbsale s ON d.id = s.debit
+INNER JOIN jbitem i ON s.item = i.id
+GROUP BY d.id;
+
+/* 
+Execute:
+> CREATE VIEW cost_per_debit AS
+SELECT d.id, s.quantity * i.price AS total_price 
+FROM jbdebit d 
+INNER JOIN jbsale s ON d.id = s.debit
+INNER JOIN jbitem i ON s.item = i.id
+GROUP BY d.id;
+
+0 row(s) affected
+0.016 sec
+*/
+
+SELECT * FROM cost_per_debit;
+
+/* 
+Execute:
+> SELECT * FROM cost_per_debit
+
++ ------- + ---------------- +
+| id      | total_price      |
++ ------- + ---------------- +
+| 100581  | 1250             |
+| 100582  | 1000             |
+| 100586  | 396              |
+| 100592  | 650              |
+| 100593  | 430              |
+| 100594  | 3295             |
++ ------- + ---------------- +
+6 rows
+
+Answer:
+	We used INNER JOIN since we wanted to calculate the total price from the joined records.
+	With INNER JOIN, we will never recieve NULL values from the join. However, any other JOIN may 
+	respond with NULL values where the join condition is false. */
+
+
+/* Question 19: Oh no! An earthquake!
+a) Remove all suppliers in Los Angeles from the table jbsupplier. This will not
+work right away (you will receive error code 23000) which you will have to
+solve by deleting some other related tuples. However, do not delete more
+tuples from other tables than necessary and do not change the structure of the
+tables, i.e. do not remove foreign keys. Also, remember that you are only
+allowed to use “Los Angeles” as a constant in your queries, not “199” or
+“900”.*/
+
+
+
+
+/* Delete all records in sale that are related to primary key in item where item is sold in Los Angeles */
+DELETE s FROM jbsale s 
+WHERE s.item IN (SELECT i.id FROM jbitem i 
+WHERE i.supplier = (SELECT s.id FROM jbsupplier s 
+WHERE s.city = (SELECT c.id FROM jbcity c 
+WHERE c.name = "Los Angeles")));	
+
+/* 
+Execute: 
+> DELETE s FROM jbsale s 
+WHERE s.item IN (SELECT i.id FROM jbitem i 
+WHERE i.supplier = (SELECT s.id FROM jbsupplier s 
+WHERE s.city = (SELECT c.id FROM jbcity c 
+WHERE c.name = "Los Angeles")));	
+
+1 row(s) affected
+0.015 sec
+*/
+
+/* Delete all records in item that are related to primary key in supplier where supplier city is Los Angeles */
+DELETE i FROM jbitem i WHERE i.supplier = (SELECT s.id FROM jbsupplier s WHERE s.city = (SELECT c.id FROM jbcity c WHERE c.name = "Los Angeles"));
+
+/* Execute: > DELETE i FROM jbitem i WHERE i.supplier = (SELECT s.id FROM jbsupplier s WHERE s.city = (SELECT c.id FROM jbcity c WHERE c.name = "Los Angeles"));
+	2 row(s) affected	
+	0.015 sec
+*/
+
+/* Delete all records in budget_item that are related to primary key in supplier where supplier city is Los Angeles */
+DELETE b FROM budget_item b WHERE b.supplier = (SELECT s.id FROM jbsupplier s WHERE s.city = (SELECT c.id FROM jbcity c WHERE c.name = "Los Angeles"));
+
+/* Execute: > DELETE b FROM budget_item b WHERE b.supplier = (SELECT s.id FROM jbsupplier s WHERE s.city = (SELECT c.id FROM jbcity c WHERE c.name = "Los Angeles")); 
+	1 row(s) affected
+	0.016 sec
+*/
+
+/* Delete all records in supplier which is located in Los Angeles*/
+DELETE s FROM jbsupplier s
+WHERE s.city = (SELECT c.id FROM jbcity c WHERE c.name = "Los Angeles");
+
+/* Execute: 
+> DELETE s FROM jbsupplier s
+WHERE s.city = (SELECT c.id FROM jbcity c WHERE c.name = "Los Angeles");  
+1 row(s) affected
+0.016 sec
+*/
+
+/*b) Explain what you did and why */
+/* 
+	We needed to remove all record with foreign keys refering to record we wanted to remove in jbsupplier.
+
+	We started with records which has foreign keys connect to it, since these can be removed directly.
+	We removed records in jbsale first.
+
+	Then we could remove records in he "partent" to jbsale, jbitem.
+
+	Next, we needed to remove the two another "child" to supplier, jbsupply and our own table budget_items.
+
+	When all records referring to the record we want to remove, the suppliers located in Los Angeles could finally be removed.
+ */
