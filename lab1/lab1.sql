@@ -9,15 +9,16 @@
  DROP TABLE IF EXISTS custom_table CASCADE;-- 
  */
  DROP TABLE IF EXISTS budget_item CASCADE;
- DROP VIEW IF EXISTS budget_items CASCADE;
- DROP VIEW IF EXISTS cost_per_debit CASCADE;
+ DROP VIEW IF EXISTS budget_items;
+ DROP VIEW IF EXISTS cost_per_debit;
+ DROP VIEW IF EXISTS jbsale_supply;
 /* Have the source scripts in the file so it is easy to recreate!*/
-/*
+
  
  SOURCE company_schema.sql;
  SOURCE company_data.sql;
  
- */
+
  
 /*
  Question 1: List all employees, i.e all tuples in the jbemployee relation
@@ -612,3 +613,79 @@ WHERE s.city = (SELECT c.id FROM jbcity c WHERE c.name = "Los Angeles");
 
 	When all records referring to the record we want to remove, the suppliers located in Los Angeles could finally be removed.
  */
+
+ 
+
+
+/* Question 20: An employee has tried to find out which suppliers that have delivered items that
+have been sold. He has created a view and a query that shows the number of items
+sold from a supplier.
+mysql> CREATE VIEW jbsale_supply(supplier, item, quantity) AS
+ -> SELECT jbsupplier.name, jbitem.name, jbsale.quantity
+ -> FROM jbsupplier, jbitem, jbsale
+ -> WHERE jbsupplier.id = jbitem.supplier
+ -> AND jbsale.item = jbitem.id;
+Query OK, 0 rows affected (0.01 sec)
+mysql> SELECT supplier, sum(quantity) AS sum FROM jbsale_supply
+ -> GROUP BY supplier;
++--------------+---------------+
+| supplier | sum(quantity) |
++--------------+---------------+
+| Cannon | 6 |
+| Levi-Strauss | 1 |
+| Playskool | 2 |
+| White Stag | 4 |
+| Whitman's | 2 |
++--------------+---------------+
+5 rows in set (0.00 sec)
+11
+The employee would also like include the suppliers which has delivered some
+items, although for whom no items have been sold so far. In other words he wants
+to list all suppliers, which has supplied any item, as welfl as the number of these
+items that have been sold. Help him! Drop and redefine jbsale_supply to
+consider suppliers that have delivered items that have never been sold as well.
+Hint: The above definition of jbsale_supply uses an (implicit) inner join that
+removes suppliers that have not had any of their delivered items sold. */
+
+DROP VIEW IF EXISTS jbsale_supply;
+
+/* List number of items delivered to supplier and number sold from supplier */
+
+CREATE VIEW jbsale_supply(supplier, item, quantity, qoh, id) AS
+SELECT jbsupplier.name, jbitem.name, jbsale.quantity, jbitem.qoh, jbitem.id
+FROM jbsupplier, jbitem
+LEFT JOIN jbsale ON jbsale.item = jbitem.id
+WHERE jbsupplier.id = jbitem.supplier;
+
+/* 
+Execute: 
+> CREATE VIEW jbsale_supply(supplier, item, quantity, qoh, id) AS
+SELECT jbsupplier.name, jbitem.name, jbsale.quantity, jbitem.qoh, jbitem.id
+FROM jbsupplier, jbitem
+LEFT JOIN jbsale ON jbsale.item = jbitem.id
+WHERE jbsupplier.id = jbitem.supplier;
+
+0 row(s) affected
+0.015 sec
+ */
+
+
+ SELECT supplier, sum(quantity) AS sum FROM jbsale_supply
+ GROUP BY supplier;
+
+
+/* Execute:
+> SELECT supplier, sum(quantity) AS sum FROM jbsale_supply
+ GROUP BY supplier
+
++ ------------- + -------- +
+| supplier      | sum      |
++ ------------- + -------- +
+| Cannon        | 6        |
+| Fisher-Price  |          |
+| Levi-Strauss  | 1        |
+| Playskool     | 2        |
+| White Stag    | 4        |
+| Whitman's     | 2        |
++ ------------- + -------- +
+6 rows */
