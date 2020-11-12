@@ -92,7 +92,7 @@ CREATE TABLE jbsupplier (
 
 -- Add foreign keys 
 SELECT 'Creating foreign keys' AS 'Message';
-	ALTER TABLE jbdept ADD CONSTRAINT fk_dept_store FOREIGN KEY (store) REFERENCES jbstore(id);
+ALTER TABLE jbdept ADD CONSTRAINT fk_dept_store FOREIGN KEY (store) REFERENCES jbstore(id);
 ALTER TABLE jbdept ADD CONSTRAINT fk_dept_mgr FOREIGN KEY (manager) REFERENCES jbemployee(id) ON DELETE SET NULL;
 
 ALTER TABLE jbitem ADD CONSTRAINT fk_item_dept FOREIGN KEY (dept) REFERENCES jbdept(id);
