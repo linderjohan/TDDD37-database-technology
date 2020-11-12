@@ -63,12 +63,12 @@ SELECT * FROM jbemployee;
  
  */
 /* Question 2: List the name of all departments in alphabetial order. */
-SELECT * FROM jbdept ORDER BY name;
+SELECT * FROM jbdept ORDER BY name ASC;
 
 /*
  
  Execute:
- > SELECT * FROM jbdept ORDER BY name
+ > SELECT * FROM jbdept ORDER BY name ASC
  
  + ------- + --------- + ---------- + ---------- + ------------ +
  | id      | name      | store      | floor      | manager      |
@@ -452,7 +452,7 @@ The table is considered static since it access data that is stored physically.
 					 join or left join, */
 
 CREATE VIEW cost_per_debit AS 
-SELECT d.id, s.quantity * i.price AS total_price 
+SELECT d.id, SUM(s.quantity * i.price) AS total_price 
 FROM jbdebit d, jbsale s, jbitem i 
 WHERE d.id = s.debit 
 AND s.item = i.id
@@ -461,7 +461,7 @@ GROUP BY d.id;
 /* 
 Execute:
 > CREATE VIEW cost_per_debit AS 
-SELECT d.id, s.quantity * i.price AS total_price 
+SELECT d.id, SUM(s.quantity * i.price) AS total_price 
 FROM jbdebit d, jbsale s, jbitem i 
 WHERE d.id = s.debit 
 AND s.item = i.id
@@ -480,9 +480,9 @@ Execute:
 + ------- + ---------------- +
 | id      | total_price      |
 + ------- + ---------------- +
-| 100581  | 1250             |
+| 100581  | 2050             |
 | 100582  | 1000             |
-| 100586  | 396              |
+| 100586  | 13446            |
 | 100592  | 650              |
 | 100593  | 430              |
 | 100594  | 3295             |
@@ -499,7 +499,7 @@ Execute:
 DROP VIEW cost_per_debit;
 
 CREATE VIEW cost_per_debit AS
-SELECT d.id, s.quantity * i.price AS total_price 
+SELECT d.id, SUM(s.quantity * i.price) AS total_price 
 FROM jbdebit d 
 INNER JOIN jbsale s ON d.id = s.debit
 INNER JOIN jbitem i ON s.item = i.id
@@ -508,7 +508,7 @@ GROUP BY d.id;
 /* 
 Execute:
 > CREATE VIEW cost_per_debit AS
-SELECT d.id, s.quantity * i.price AS total_price 
+SELECT d.id, SUM(s.quantity * i.price) AS total_price 
 FROM jbdebit d 
 INNER JOIN jbsale s ON d.id = s.debit
 INNER JOIN jbitem i ON s.item = i.id
@@ -527,14 +527,16 @@ Execute:
 + ------- + ---------------- +
 | id      | total_price      |
 + ------- + ---------------- +
-| 100581  | 1250             |
+| 100581  | 2050             |
 | 100582  | 1000             |
-| 100586  | 396              |
+| 100586  | 13446            |
 | 100592  | 650              |
 | 100593  | 430              |
 | 100594  | 3295             |
 + ------- + ---------------- +
 6 rows
+
+
 
 Answer:
 	We used INNER JOIN since we wanted to calculate the total price from the joined records.
