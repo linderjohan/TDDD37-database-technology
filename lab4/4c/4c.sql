@@ -29,6 +29,8 @@ DROP PROCEDURE IF EXISTS addPayment;
 DROP FUNCTION IF EXISTS calcFreeSeats;
 DROP FUNCTION IF EXISTS calcPrice;
 
+DROP TRIGGER IF EXISTS createTickets;
+DROP VIEW IF EXISTS allFlights;
 
 CREATE TABLE Airport (
   airport_code VARCHAR(3) NOT NULL,
@@ -383,11 +385,11 @@ CREATE FUNCTION calcFreeSeats(flight_number INT) returns INT
 BEGIN
 	DECLARE f_seats INT;
 
-	SELECT (40 - COUNT(number_of_passengers)) INTO f_seats FROM Reservation
-		INNER JOIN Booking ON
-		Booking.reservation_number = Reservation.reservation_number
+	SELECT (40 - COUNT(ticket_number)) INTO f_seats FROM Ticket
+		INNER JOIN Reservation ON
+		Reservation.reservation_number = Ticket.reservation_number
 		INNER JOIN Flight ON
-		Flight.schedule = Reservation.flight_number
+		Flight.flight_number = Reservation.flight_number
 		WHERE Flight.flight_number = flight_number;
 
 	return f_seats;
@@ -427,7 +429,42 @@ BEGIN
 		Flight.schedule = Weekly_schedule.id
 		WHERE Flight.flight_number = flight_number;
 
-	return r_price * d_factor * (booked_seats + 1) / 40 * p_factor;
+	return ROUND(r_price * d_factor * (booked_seats + 1) / 40 * p_factor, 3);
 
 END
 //
+
+CREATE TRIGGER createTickets AFTER INSERT ON Booking
+	FOR EACH ROW
+	BEGIN
+		declare no_tickets INT;
+		SELECT COUNT(passport_number) INTO no_tickets FROM Has_reservation AS H WHERE
+			H.reservation_number = NEW.reservation_number;
+
+		INSERT INTO Ticket
+			SELECT FLOOR(100000 + (RAND() * (999999 - 100000))), passport_number , NEW.reservation_number FROM
+				Has_reservation AS H WHERE H.reservation_number = NEW.reservation_number;
+	END
+//
+
+
+/* SELECT 
+departure_city_name, destination_city_name, departure_time, departure_day,departure_week, 
+departure_year, nr_of_free_seats, current_price_per_seat */
+CREATE VIEW allFlights AS 
+	SELECT 
+		Dep.name AS departure_city_name,
+		Arr.name AS destination_city_name,
+		Ws.departure_time AS departure_time,
+		Ws.weekday AS departure_day,
+		F.week AS departure_week,
+		R.year AS departure_year,
+		calcFreeSeats(F.flight_number) AS nr_of_free_seats,
+		calcPrice(F.flight_number) AS current_price_per_seat
+
+	FROM Route AS R
+		INNER JOIN Airport AS Dep ON R.departure = Dep.airport_code		
+		INNER JOIN Airport AS Arr ON R.arrival = Arr.airport_code
+		INNER JOIN Weekly_schedule AS Ws ON R.route_id = Ws.route
+		INNER JOIN Flight AS F ON Ws.id = F.schedule;
+	

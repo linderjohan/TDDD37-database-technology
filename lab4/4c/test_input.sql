@@ -115,4 +115,6 @@ delimiter ;
 DELETE FROM Reservation WHERE reservation_number = 1; 
 CALL calcPrice(80, @a);
 SELECT @a;
+
+
         
