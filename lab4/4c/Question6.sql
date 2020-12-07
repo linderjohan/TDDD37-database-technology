@@ -36,8 +36,6 @@ CALL addRoute("MIT","HOB",2010,2000);
 CALL addFlight("MIT","HOB", 2010, "Monday", "09:00:00");
 CALL addFlight("MIT","HOB", 2010, "Monday", "21:00:00");
 
-
-
 SELECT "Test 1: Adding a reservation, expected OK result" as "Message";
 CALL addReservation("MIT","HOB",2010,1,"Monday","09:00:00",3,@a);
 SELECT "Check that the reservation number is returned properly (any number will do):" AS "Message",@a AS "Res. number returned"; 
@@ -47,7 +45,6 @@ CALL addReservation("MIT","HOB",2010,1,"Tuesday","21:00:00",3,@b);
 
 SELECT "Test 3: Adding a reservation when there are not enough seats. Expected answer: There are not enough seats available on the chosen flight" as "Message";
 CALL addReservation("MIT","HOB",2010,1,"Monday","09:00:00",61,@c); 
-
 
 SELECT "Test 4.1: Adding a passenger. Expected OK result" as "Message";
 CALL addPassenger(@a,00000001,"Frodo Baggins");
@@ -70,7 +67,6 @@ CALL addContact(99999,00000001,"frodo@magic.mail",080667989);
 
 SELECT "Test 8: Adding a contact that is not a passenger on the reservation. Expected result: The person is not a passenger of the reservation" as "Message";
 CALL addContact(@a,00000099,"frodo@magic.mail",080667989); 
-UPDATE Reservation SET contact = 00000001 WHERE reservation_number = @a;
 
 SELECT "Test 9: Making a payment. Expected OK result" as "Message";
 CALL addPayment (@a, "Gandalf", 6767676767676767); 
@@ -141,6 +137,5 @@ CALL addPassenger(@a,13000039,"Orch38");
 CALL addPassenger(@a,13000040,"Orch39"); 
 CALL addPassenger(@a,13000041,"Orch40");
 CALL addContact(@a,13000001,"saruman@magic.mail",080667989); 
-
 SELECT "Now testing. Expected result: There are not enough seats available on the flight anymore, deleting reservation" as "Message";
 CALL addPayment (@a, "Sauron",7878787878); 

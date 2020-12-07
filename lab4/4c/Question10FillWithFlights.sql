@@ -4,7 +4,6 @@
  This script simply fills the database with a relevant flight used by the other script. Note 
  that this script only should be run in one of the terminals.
 **********************************************************************************************/
-
 SELECT "Testing answer for 10" as "Message";
 SELECT "Filling database with flights, should only be run in one of the terminals" as "Message";
 /*Fill the database with data */

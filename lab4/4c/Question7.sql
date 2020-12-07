@@ -40,7 +40,6 @@ CALL addPassenger(@b,00000012,"Nazgul2");
 CALL addPassenger(@b,00000013,"Nazgul3");
 CALL addPayment (@b, "Saruman", 6868); 
 
-
 SELECT "Step3, check that the results are correct. If so the next query should return the empty set. If any line is returned then this is either missing, incorrect or additional to what the database should contain" AS "Message";
 SELECT departure_city_name, destination_city_name, departure_time, departure_day,departure_week, departure_year, nr_of_free_seats, current_price_per_seat
 FROM (
@@ -50,5 +49,3 @@ SELECT departure_city_name, destination_city_name, departure_time, departure_day
 ) res
 GROUP BY departure_city_name, destination_city_name, departure_time, departure_day,departure_week, departure_year, nr_of_free_seats, current_price_per_seat
 HAVING count(*) = 1;
-
-

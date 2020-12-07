@@ -2,7 +2,7 @@
  Question 3, Flight addition interfaces test script.
  This is a test script that tests that the interface of the BryanAir back-end works
  correctly. It simply tests that the interfaces exists for filling the database with
- flightinformation, without acutally checking that they do what they are supposed to. ï¿½
+ flightinformation, without acutally checking that they do what they are supposed to. ´
  This is done later in the question 7 testscript.
 *************************************************************************************/
 SELECT "Testing questions for flight addition procedures, i.e. question 3" as "Message";

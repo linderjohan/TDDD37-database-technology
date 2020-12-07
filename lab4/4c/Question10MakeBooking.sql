@@ -30,16 +30,9 @@ CALL addPassenger(@a,00000019,"Orch18");
 CALL addPassenger(@a,00000020,"Orch19");
 CALL addPassenger(@a,00000021,"Orch20");
 CALL addContact(@a,00000001,"saruman@magic.mail",080667989); 
--- SELECT SLEEP(5);
+SELECT SLEEP(5);
 SELECT "Making payment, supposed to work for one session and be denied for the other" as "Message";
-
-
--- LOCK TABLES Booking write, Reservation write, Reservation R read, Ticket T read, Ticket write, Has_reservation Hr read,	Year read, Weekly_schedule Ws read, Route read, Weekday read;
-LOCK TABLES Booking read, Ticket read, Reservation R read, Flight read, Has_reservation Hr read, Ticket T read, Year read, Weekday read, Route read, Weekly_schedule Ws read;
-
 CALL addPayment (@a, "Sauron",7878787878);
-UNLOCK TABLES;
-
 SELECT "Nr of free seats on the flight (should be 19 if no overbooking occured, otherwise -2): " as "Message", (SELECT nr_of_free_seats from allFlights where departure_week = 1) as "nr_of_free_seats";
 
   
